@@ -594,7 +594,8 @@ class TagWriter:
         if self.config.enable_genres and results.get('formatted_genres'):
             has_existing = False
             if audio.tags and '\xa9cmt' in audio.tags:
-                has_existing = any("Essentia Genre:" in c for c in audio.tags['\xa9cmt'
+                has_existing = any("Essentia Genre:" in c for c in
+                                   audio.tags['\xa9cmt'])
             if self.config.overwrite_existing or not has_existing:
                 genre_str = '; '.join(results['formatted_genres'])
                 audio['\xa9gen'] = [genre_str]
@@ -795,7 +796,7 @@ def has_existing_tags(filepath, enable_genres, enable_moods):
         elif ext in ('.mp3', '.aiff', '.aif', '.wav', '.dsf'):
             tags = audio.tags
             if tags:
-                has_genre = any(getattr(c, 'desc', '') == 'Essentia Genre'
+                has_genre = any(getattr(c, 'desc', '') == 'Essentia Genre')
                 has_mood = any(
                     getattr(c, 'desc', '') == 'Essentia Mood'
                     for c in tags.getall('COMM')
