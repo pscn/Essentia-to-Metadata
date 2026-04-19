@@ -541,7 +541,7 @@ class TagWriter:
         tags_written = []
         
         if self.config.enable_genres and results.get('formatted_genres'):
-            if self.config.overwrite_existing or 'GENRE' not in audio:
+            if self.config.overwrite_existing or 'ESSENTIA_GENRE' not in audio:
                 genre_str = '; '.join(results['formatted_genres'])
                 audio['GENRE'] = genre_str
                 tags_written.append(f"GENRE={genre_str}")
@@ -555,7 +555,7 @@ class TagWriter:
                 self.logger.log("     ⏭️  Skipping genres (already has GENRE tag)")
         
         if self.config.enable_moods and results.get('formatted_moods'):
-            if self.config.overwrite_existing or 'MOOD' not in audio:
+            if self.config.overwrite_existing or 'ESSENTIA_MOOD' not in audio:
                 mood_str = '; '.join(results['formatted_moods'][:3])
                 audio['MOOD'] = mood_str
                 tags_written.append(f"MOOD={mood_str}")
@@ -592,7 +592,9 @@ class TagWriter:
         tags_written = []
         
         if self.config.enable_genres and results.get('formatted_genres'):
-            has_existing = '\xa9gen' in audio.tags if audio.tags else False
+            has_existing = False
+            if audio.tags and '\xa9cmt' in audio.tags:
+                has_existing = any("Essentia Genre:" in c for c in audio.tags['\xa9cmt'
             if self.config.overwrite_existing or not has_existing:
                 genre_str = '; '.join(results['formatted_genres'])
                 audio['\xa9gen'] = [genre_str]
@@ -631,7 +633,8 @@ class TagWriter:
         tags_written = []
         
         if self.config.enable_genres and results.get('formatted_genres'):
-            has_existing = 'WM/Genre' in audio if audio.tags else False
+            # FIXME: untested
+            has_existing = 'ESSENTIA_GENRE' in audio if audio.tags else False
             if self.config.overwrite_existing or not has_existing:
                 genre_str = '; '.join(results['formatted_genres'])
                 audio['WM/Genre'] = genre_str
@@ -742,7 +745,8 @@ class TagWriter:
         tags_written = []
         
         if self.config.enable_genres and results.get('formatted_genres'):
-            has_existing = 'Genre' in audio.tags
+            # FIXME: untested
+            has_existing = 'Essentia Genre' in audio.tags
             if self.config.overwrite_existing or not has_existing:
                 genre_str = '; '.join(results['formatted_genres'])
                 audio.tags['Genre'] = genre_str
@@ -773,7 +777,9 @@ class TagWriter:
 
 
 def has_existing_tags(filepath, enable_genres, enable_moods):
-    """Quick check if file already has genre/mood tags (avoids expensive analysis)."""
+    """Quick check if file already has genre/mood tags (avoids expensive analysis).
+    Note: this only checks for our own {ESSENTIA,Essentia}* tags and will overwrite
+    existing genre / mood tags if no {ESSENTIA,Essentia}* tag is present."""
     try:
         audio = mutagen.File(filepath)
         if audio is None or audio.tags is None:
@@ -784,26 +790,26 @@ def has_existing_tags(filepath, enable_genres, enable_moods):
         has_mood = False
 
         if ext in ('.flac', '.ogg', '.oga', '.opus'):
-            has_genre = 'GENRE' in audio
-            has_mood = 'MOOD' in audio
+            has_genre = 'ESSENTIA_GENRE' in audio
+            has_mood = 'ESSENTIA_MOOD' in audio
         elif ext in ('.mp3', '.aiff', '.aif', '.wav', '.dsf'):
             tags = audio.tags
             if tags:
-                has_genre = bool(tags.getall('TCON'))
+                has_genre = any(getattr(c, 'desc', '') == 'Essentia Genre'
                 has_mood = any(
                     getattr(c, 'desc', '') == 'Essentia Mood'
                     for c in tags.getall('COMM')
                 )
         elif ext in ('.m4a', '.m4b', '.mp4', '.aac'):
-            has_genre = '\xa9gen' in audio
-            has_mood = '----:com.apple.iTunes:MOOD' in audio
+            has_genre = any("Essentia Genre:" in str(c) for c in tags.get('\xa9cmt', []))
+            has_mood = '----:com.apple.iTunes:ESSENTIA_MOOD' in audio
         elif ext == '.wma':
-            has_genre = 'WM/Genre' in audio
-            has_mood = 'WM/Mood' in audio
+            has_genre = 'ESSENTIA_GENRE' in audio
+            has_mood = 'ESSENTIA_MOOD' in audio
         elif ext in ('.wv', '.ape', '.mpc', '.mp+'):
             tags = audio.tags or {}
-            has_genre = 'Genre' in tags
-            has_mood = 'Mood' in tags
+            has_genre = 'Essentia Genre' in tags
+            has_mood = 'Essentia Mood' in tags
 
         if enable_genres and enable_moods:
             return has_genre and has_mood
