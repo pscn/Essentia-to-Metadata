@@ -684,7 +684,9 @@ class TagWriter:
         tags_written = []
         
         if self.config.enable_genres and results.get('formatted_genres'):
-            has_existing_genre = bool(tags.getall('TCON'))
+            # has_existing_genre = bool(tags.getall('TCON'))
+            # FIXME: toggle this with an config option?
+            has_existing_genre = "COMM:Essentia Genre:eng" in tags
             if self.config.overwrite_existing or not has_existing_genre:
                 genre_str = '; '.join(results['formatted_genres'])
                 tags.delall('TCON')
@@ -707,6 +709,12 @@ class TagWriter:
         
         if self.config.enable_moods and results.get('formatted_moods'):
             mood_str = '; '.join(results['formatted_moods'][:3])
+            tags.add(TMOO(
+                encoding=3,
+                text=[mood_str]
+            ))
+            tags_written.append(f"TMOO(mood)={mood_str}")
+
             tags.add(COMM(
                 encoding=3,
                 lang='eng',
@@ -714,12 +722,6 @@ class TagWriter:
                 text=mood_str
             ))
             tags_written.append(f"COMM(mood)={mood_str}")
-
-            tags.add(TMOO(
-                encoding=3,
-                text=[mood_str]  # TMOO expects a list
-            ))
-            tags_written.append(f"TMOO(mood)={mood_str}")
 
         if tags_written:
             self.logger.log(f"     ✅ Written tags: {', '.join(tags_written)}", console=False)
