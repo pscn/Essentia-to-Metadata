@@ -321,8 +321,7 @@ class EssentiaAnalyzer:
         
         self.embedding_model = TensorflowPredictEffnetDiscogs(
             graphFilename=EMBEDDING_MODEL,
-            output="PartitionedCall:1",
-            batchSize=64
+            output="PartitionedCall:1"
         )
         
         # Conditionally load genre model
@@ -839,8 +838,7 @@ def _init_worker(model_dir, enable_genres, enable_moods):
 
     _worker_models['embedding'] = TensorflowPredictEffnetDiscogs(
         graphFilename=f"{model_dir}/discogs-effnet-bs64-1.pb",
-        output="PartitionedCall:1",
-        batchSize=64
+        output="PartitionedCall:1"
     )
 
     if enable_genres:
