@@ -17,7 +17,7 @@ import numpy as np
 # processes so that TF thread settings can be configured before initialization.
 import mutagen
 from mutagen.flac import FLAC
-from mutagen.id3 import ID3, TCON, COMM
+from mutagen.id3 import ID3, TCON, COMM, TMOO
 from mutagen.oggvorbis import OggVorbis
 from mutagen.oggopus import OggOpus
 from mutagen.mp4 import MP4
@@ -321,7 +321,8 @@ class EssentiaAnalyzer:
         
         self.embedding_model = TensorflowPredictEffnetDiscogs(
             graphFilename=EMBEDDING_MODEL,
-            output="PartitionedCall:1"
+            output="PartitionedCall:1",
+            batchSize=64
         )
         
         # Conditionally load genre model
@@ -714,7 +715,13 @@ class TagWriter:
                 text=mood_str
             ))
             tags_written.append(f"COMM(mood)={mood_str}")
-        
+
+            tags.add(TMOO(
+                encoding=3,
+                text=[mood_str]  # TMOO expects a list
+            ))
+            tags_written.append(f"TMOO(mood)={mood_str}")
+
         if tags_written:
             self.logger.log(f"     ✅ Written tags: {', '.join(tags_written)}", console=False)
     
@@ -832,7 +839,8 @@ def _init_worker(model_dir, enable_genres, enable_moods):
 
     _worker_models['embedding'] = TensorflowPredictEffnetDiscogs(
         graphFilename=f"{model_dir}/discogs-effnet-bs64-1.pb",
-        output="PartitionedCall:1"
+        output="PartitionedCall:1",
+        batchSize=64
     )
 
     if enable_genres:
