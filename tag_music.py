@@ -796,7 +796,10 @@ def has_existing_tags(filepath, enable_genres, enable_moods):
         elif ext in ('.mp3', '.aiff', '.aif', '.wav', '.dsf'):
             tags = audio.tags
             if tags:
-                has_genre = any(getattr(c, 'desc', '') == 'Essentia Genre')
+                has_genre = any(
+                    getattr(c, 'desc', '') == 'Essentia Genre' 
+                    for c in tags.getall('COMM')
+                )
                 has_mood = any(
                     getattr(c, 'desc', '') == 'Essentia Mood'
                     for c in tags.getall('COMM')
